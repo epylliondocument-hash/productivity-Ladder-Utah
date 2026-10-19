@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMV Productivity Ladder Planner</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --surface: #ffffff;
+    --surface2: #eef2f7;
+    --border: #d3dae5;
+    --text: #1f2937;
+    --muted: #64748b;
+    --accent: #2f6db5;
+    --accent2: #1d4e89;
+    --green: #15803d;
+    --yellow: #b45309;
+    --orange: #c2410c;
+    --red: #b91c1c;
+    --blue-input: #eaf2fb;
+    --blue-text: #1d4ed8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .header {
+    background: linear-gradient(135deg, #1b3556 0%, #2c5282 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .header h1 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .header h1 span { color: var(--accent2); }
+  .header .subtitle { color: var(--muted); font-size: 0.85rem; }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .export-btns {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .btn-export {
+    padding: 0.45rem 0.85rem;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    border-radius: 0.375rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s;
+  }
+  .btn-export:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  .btn-export svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--surface);
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+  }
+  /* Print / PDF report (hidden on screen) */
+  #printReport { display: none; }
+  .tab {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active { background: var(--accent); color: white; }
+  /* light theme: header sits on navy */
+  .header h1 { color: #ffffff; }
+  .header h1 span { color: #bfd7f5; }
+  .header .subtitle { color: #c7d2e3; }
+  .header .btn-export { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.28); color: #ffffff; }
+  .header .btn-export:hover { background: #ffffff; border-color: #ffffff; color: #1b3556; }
+  .header .tabs { background: rgba(255,255,255,0.12); }
+  .header .tab { color: #c7d2e3; }
+  .header .tab:hover { color: #ffffff; background: rgba(255,255,255,0.12); }
+  .header .tab.active { background: #ffffff; color: #1b3556; }
+  .card { box-shadow: 0 1px 2px rgba(15,23,42,0.06); }
+  .kpi { border: 1px solid var(--border); }
+  .eff-bar-fill { background: linear-gradient(90deg, #7fa8dc, var(--accent)) !important; }
+  .main { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .grid-2 { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card h2::before {
+    content: '';
+    width: 4px;
+    height: 1em;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .form-group { margin-bottom: 0.875rem; }
+  .form-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: var(--blue-input);
+    border: 1px solid #a9c4e6;
+    border-radius: 0.375rem;
+    color: var(--blue-text);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(47,109,181,0.25);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .kpi {
+    background: var(--surface2);
+    border-radius: 0.5rem;
+    padding: 0.875rem;
+    text-align: center;
+  }
+  .kpi .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent2);
+    line-height: 1.2;
+  }
+  .kpi .label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.25rem;
+  }
+  .kpi.green .value { color: var(--green); }
+  .kpi.yellow .value { color: var(--yellow); }
+  .kpi.orange .value { color: var(--orange); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  th, td {
+    padding: 0.4rem 0.6rem;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: var(--surface2);
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    position: sticky;
+    top: 0;
+  }
+  th:first-child, td:first-child { text-align: left; }
+  tr:hover td { background: rgba(47,109,181,0.06); }
+  .table-wrap {
+    overflow: auto;
+    max-height: 480px;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+  }
+  .note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--surface2);
+    border-radius: 0.375rem;
+    border-left: 3px solid var(--accent);
+  }
+  .band-tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    background: rgba(47,109,181,0.12);
+    color: var(--accent2);
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.75rem;
+    color: var(--text);
+  }
+  .matrix-table th, .matrix-table td { font-size: 0.72rem; padding: 0.3rem 0.4rem; }
+  .matrix-table th:first-child, .matrix-table td:first-child { min-width: 120px; }
+  .ladder-table th, .ladder-table td { text-align: center; font-size: 0.75rem; }
+  .ladder-table td:first-child, .ladder-table th:first-child { text-align: left; }
+  .eff-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  .eff-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 3px;
+  }
+  .btn {
+    padding: 0.5rem 1rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+  .btn:hover { background: #1d4e89; }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--border); }
+  .line-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  .line-card {
+    background: var(--surface2);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+  }
+  .line-card .ln { font-weight: 600; color: var(--accent2); font-size: 0.85rem; }
+  .line-card .qty { font-size: 1.1rem; font-weight: 700; margin: 0.25rem 0; }
+  .line-card .meta { font-size: 0.7rem; color: var(--muted); }
+  .pic-box {
+    border: 1.5px dashed #a9c4e6;
+    background: var(--surface2);
+    border-radius: 0.5rem;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .pic-box:hover, .pic-box.drag { border-color: var(--accent); background: #e4edf8; }
+  .pic-box img { display: block; width: 100%; max-height: 260px; object-fit: contain; background: #fff; }
+  .pic-box .pic-empty span { display: block; font-size: 0.7rem; margin-top: 0.2rem; opacity: 0.85; }
+  .pic-cap { font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 0.4rem; }
+  .btn:disabled { opacity: 0.45; cursor: default; }
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  /* ========== PRINT / PDF (high quality) ========== */
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 10mm 9mm 12mm 9mm;
+    }
+    html, body {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif !important;
+      font-size: 9pt;
+      line-height: 1.35;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    .header, .tabs, .export-btns, footer, .main,
+    .btn, .btn-export, .btn-secondary,
+    #planner, #matrix, #ladders,
+    .no-print {
+      display: none !important;
+    }
+    #printReport {
+      display: block !important;
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0;
+      color: #0f172a !important;
+    }
+
+    #printReport .pr-pic { text-align: center; }
+    #printReport .pr-pic img {
+      display: block;
+      max-height: 26mm;
+      max-width: 42mm;
+      border: 0.6pt solid #94a3b8;
+      border-radius: 2pt;
+    }
+    #printReport .pr-pic .cap { font-size: 6.5pt; color: #64748b !important; margin-top: 2pt; max-width: 42mm; }
+
+    /* Header bar */
+    #printReport .pr-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 2.5pt solid #1e3a5f;
+      padding-bottom: 6pt;
+      margin-bottom: 10pt;
+    }
+    #printReport .pr-header h1 {
+      font-size: 15pt;
+      font-weight: 700;
+      color: #0f172a !important;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    #printReport .pr-header .pr-brand {
+      font-size: 7.5pt;
+      color: #64748b !important;
+      text-align: right;
+      line-height: 1.3;
+    }
+    #printReport .pr-sub {
+      font-size: 8pt;
+      color: #475569 !important;
+      margin: 0 0 8pt 0;
+    }
+    #printReport .pr-badge {
+      display: inline-block;
+      background: #e0f2fe !important;
+      color: #0c4a6e !important;
+      border: 0.6pt solid #7dd3fc;
+      border-radius: 2pt;
+      padding: 1pt 5pt;
+      font-size: 7.5pt;
+      font-weight: 600;
+      margin-right: 4pt;
+    }
+
+    /* Input meta grid */
+    #printReport .pr-meta {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0;
+      border: 1pt solid #94a3b8;
+      margin-bottom: 10pt;
+      page-break-inside: avoid;
+    }
+    #printReport .pr-meta > div {
+      padding: 5pt 6pt;
+      border-right: 0.5pt solid #cbd5e1;
+      background: #f8fafc !important;
+    }
+    #printReport .pr-meta > div:last-child { border-right: none; }
+    #printReport .pr-meta .pm-label {
+      font-size: 6.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748b !important;
+      font-weight: 600;
+    }
+    #printReport .pr-meta .pm-value {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #0f172a !important;
+      margin-top: 1pt;
+    }
+
+    /* KPI strip */
+    #printReport .pr-kpi {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4pt;
+      margin-bottom: 11pt;
+      page-break-inside: avoid;
+    }
+    #printReport .pr-kpi .box {
+      border: 1pt solid #94a3b8;
+      background: #f1f5f9 !important;
+      padding: 5pt 4pt;
+      text-align: center;
+      border-radius: 2pt;
+    }
+    #printReport .pr-kpi .box.accent {
+      background: #dbeafe !important;
+      border-color: #3b82f6;
+    }
+    #printReport .pr-kpi .box .kv {
+      font-size: 12.5pt;
+      font-weight: 800;
+      color: #0f172a !important;
+      line-height: 1.15;
+    }
+    #printReport .pr-kpi .box.accent .kv { color: #1d4ed8 !important; }
+    #printReport .pr-kpi .box .kl {
+      font-size: 6pt;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #64748b !important;
+      margin-top: 2pt;
+      font-weight: 600;
+    }
+
+    /* Section titles */
+    #printReport h2 {
+      font-size: 9.5pt;
+      font-weight: 700;
+      color: #0f172a !important;
+      margin: 11pt 0 4pt;
+      padding: 3pt 0 3pt 6pt;
+      border-left: 3pt solid #2563eb;
+      border-bottom: 0.8pt solid #cbd5e1;
+      page-break-after: avoid;
+      background: #f8fafc !important;
+    }
+
+    /* Tables */
+    #printReport table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 7.5pt;
+      margin-bottom: 6pt;
+      page-break-inside: auto;
+    }
+    #printReport thead { display: table-header-group; }
+    #printReport tr { page-break-inside: avoid; page-break-after: auto; }
+    #printReport th, #printReport td {
+      border: 0.5pt solid #94a3b8;
+      padding: 2.5pt 4pt;
+      text-align: right;
+      color: #0f172a !important;
+    }
+    #printReport th {
+      background: #1e3a5f !important;
+      color: #ffffff !important;
+      font-weight: 600;
+      font-size: 6.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    #printReport th:first-child,
+    #printReport td:first-child { text-align: left; }
+    #printReport tbody tr:nth-child(even) td {
+      background: #f1f5f9 !important;
+    }
+    #printReport tbody tr.row-total td {
+      background: #e0f2fe !important;
+      font-weight: 700;
+      border-top: 1.2pt solid #1e3a5f;
+    }
+    #printReport tbody tr.row-current td {
+      background: #fef9c3 !important;
+      font-weight: 600;
+    }
+    #printReport tbody tr.row-peak td {
+      background: #dcfce7 !important;
+    }
+
+    /* Two-column block for secondary tables */
+    #printReport .pr-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8pt;
+      margin-top: 4pt;
+      page-break-inside: avoid;
+    }
+    #printReport .pr-cols h2 { margin-top: 0; }
+
+    /* Ladder ramp strip */
+    #printReport .pr-ramp {
+      display: flex;
+      gap: 0;
+      margin: 4pt 0 8pt;
+      border: 1pt solid #94a3b8;
+      page-break-inside: avoid;
+    }
+    #printReport .pr-ramp .rd {
+      flex: 1;
+      text-align: center;
+      padding: 3pt 2pt;
+      border-right: 0.5pt solid #cbd5e1;
+      background: #f8fafc !important;
+    }
+    #printReport .pr-ramp .rd:last-child { border-right: none; }
+    #printReport .pr-ramp .rd .rd-d {
+      font-size: 6pt;
+      color: #64748b !important;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    #printReport .pr-ramp .rd .rd-e {
+      font-size: 8.5pt;
+      font-weight: 700;
+      color: #0f172a !important;
+    }
+
+    /* Notes & footer */
+    #printReport .pr-note {
+      font-size: 7pt;
+      color: #334155 !important;
+      margin: 4pt 0 6pt;
+      padding: 4pt 6pt;
+      background: #f8fafc !important;
+      border-left: 2.5pt solid #2563eb;
+      page-break-inside: avoid;
+    }
+    #printReport .pr-footer {
+      margin-top: 10pt;
+      padding-top: 5pt;
+      border-top: 1pt solid #94a3b8;
+      font-size: 6.5pt;
+      color: #64748b !important;
+      display: flex;
+      justify-content: space-between;
+      page-break-inside: avoid;
+    }
+    #printReport .pr-section {
+      page-break-inside: avoid;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>SMV <span>Productivity Ladder</span> Planner</h1>
+    <div class="subtitle">Garment sewing-line efficiency & capacity planner · live recalculation</div>
+  </div>
+  <div class="header-actions">
+    <div class="export-btns">
+      <button class="btn-export" onclick="doPrint()" title="Print or Save as PDF">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Print
+      </button>
+      <button class="btn-export" onclick="doExportPDF()" title="Export plan as PDF (opens print dialog → Save as PDF)">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Export PDF
+      </button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="planner">Planner</button>
+      <button class="tab" data-tab="matrix">Matrix</button>
+      <button class="tab" data-tab="ladders">Ladders</button>
+    </div>
+  </div>
+</div>
+
+<!-- Printable report (only visible when printing) -->
+<div id="printReport"></div>
+
+<div class="main">
+  <!-- ========== PLANNER ========== -->
+  <div id="planner" class="panel active">
+    <div class="grid-2">
+      <div>
+      <div class="card">
+        <h2>Order Inputs</h2>
+        <div class="form-group">
+          <label>SMV (minutes per piece)</label>
+          <input type="number" id="smv" value="66.5" step="0.1" min="0.1">
+        </div>
+        <div class="form-group">
+          <label>Manpower (operators on line)</label>
+          <input type="number" id="manpower" value="70" step="1" min="1">
+        </div>
+        <div class="form-group">
+          <label>Quantity (pcs)</label>
+          <input type="number" id="quantity" value="50000" step="1" min="1">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Lead time (days)</label>
+            <input type="number" id="leadTime" value="24" step="1" min="1" max="60">
+          </div>
+          <div class="form-group">
+            <label>Hours / day</label>
+            <input type="number" id="hoursDay" value="10" step="0.5" min="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Ladder</label>
+          <select id="ladderType">
+            <option value="Tight" selected>Tight</option>
+            <option value="Basic">Basic</option>
+            <option value="Complex">Complex</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>EFF gap (planning)</label>
+          <input type="number" id="effGap" value="0" step="0.01" min="0" max="0.5">
+        </div>
+        <div class="form-group">
+          <label>Avg basis (headline figures)</label>
+          <select id="avgBasis">
+            <option value="best" selected>Best line</option>
+            <option value="all">All lines</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Manual avg pcs / hour (optional)</label>
+          <input type="number" id="manualPcs" step="0.1" min="0" placeholder="average pcs/hour to hold · blank = ladder only">
+        </div>
+        <div class="form-group">
+          <label>Manual avg efficiency % (optional)</label>
+          <input type="number" id="manualEff" step="0.1" min="0" max="200" placeholder="% of the 100% target, e.g. 45">
+          <div class="note" id="manualHint" style="display:none;margin-top:0.4rem">Both are filled: the pcs / hour box is used and the efficiency is ignored.</div>
+        </div>
+        <button class="btn" style="width:100%;margin-top:0.5rem" onclick="runPlanner()">Recalculate</button>
+        <div class="note" id="bandInfo" style="margin-top:1rem">—</div>
+      </div>
+      <div class="card" style="margin-top:1rem">
+        <h2>Style Picture</h2>
+        <div class="pic-box" id="picBox" title="Click to add a picture, or drop / paste one here"></div>
+        <input type="file" id="picFile" accept="image/*" hidden>
+        <div class="form-row" style="margin-top:0.75rem">
+          <button class="btn" id="picAdd" type="button">Add picture</button>
+          <button class="btn btn-secondary" id="picRemove" type="button">Remove</button>
+        </div>
+        <div class="form-group" style="margin:0.875rem 0 0">
+          <label>Caption (optional)</label>
+          <input type="text" id="picCaption" placeholder="Style / buyer / PO" maxlength="80">
+        </div>
+        <div class="note" style="margin-top:0.75rem">Shown on the printed / PDF report. Stays saved in this browser.</div>
+      </div>
+      </div>
+
+      <div>
+        <div class="kpi-grid" id="kpis"></div>
+        <div class="card" style="margin-bottom:1rem">
+          <h2>Day plan – Line 1</h2>
+          <div class="table-wrap">
+            <table id="dayPlanTable">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>Efficiency</th>
+                  <th>Pcs / hour</th>
+                  <th>Hours</th>
+                  <th>Output</th>
+                  <th>Remaining</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Line by line (lines run one after another)</h2>
+          <div class="line-cards" id="lineCards"></div>
+          <div class="table-wrap" style="margin-top:1rem;max-height:220px">
+            <table id="lineTable">
+              <thead>
+                <tr>
+                  <th>Line</th>
+                  <th>Quantity (pcs)</th>
+                  <th>Days</th>
+                  <th>Line hours</th>
+                  <th>Avg efficiency</th>
+                  <th>Avg pcs / hour</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1.5rem">
+      <h2>Same quantity · other lead times</h2>
+      <div class="table-wrap" style="max-height:280px">
+        <table id="altLTTable">
+          <thead>
+            <tr>
+              <th>Lead time (days)</th>
+              <th data-lbl="eff">Avg efficiency</th>
+              <th data-lbl="pcs">Avg pcs / hour</th>
+              <th>Days</th>
+              <th>Lines</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1.5rem">
+      <h2 data-lbl="qty">Average efficiency vs quantity</h2>
+      <div class="table-wrap" style="max-height:280px">
+        <table id="altQtyTable">
+          <thead>
+            <tr>
+              <th>Quantity (pcs)</th>
+              <th data-lbl="eff">Avg efficiency</th>
+              <th data-lbl="pcs">Avg pcs / hour</th>
+              <th>Days</th>
+              <th>Lines</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="note">Same SMV, manpower, hours and lead time as the order. Small orders finish during the ramp and average lower.</div>
+    </div>
+  </div>
+
+  <!-- ========== MATRIX ========== -->
+  <div id="matrix" class="panel">
+    <div class="card">
+      <h2>Lead time × SMV range matrix</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">
+        Uses current Planner inputs (manpower, quantity, hours, ladder, EFF gap, avg basis, manual pcs/hour). SMV used is a typical value inside each range.
+      </p>
+      <div class="section-title" data-lbl="mxEff">Average efficiency</div>
+      <div class="table-wrap">
+        <table class="matrix-table" id="matrixEff"></table>
+      </div>
+      <div class="section-title" data-lbl="mxPcs">Average pcs / hour</div>
+      <div class="table-wrap">
+        <table class="matrix-table" id="matrixPcs"></table>
+      </div>
+      <div class="section-title">Lines × days</div>
+      <div class="table-wrap">
+        <table class="matrix-table" id="matrixLines"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== LADDERS ========== -->
+  <div id="ladders" class="panel">
+    <div class="card">
+      <h2>Efficiency ladders by SMV range</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">
+        Day 1–8 efficiency values. After day 8 the day-8 value repeats. Bands touch (no gaps).
+      </p>
+      <div id="ladderTables"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  SMV Productivity Ladder Planner · logic ported from SMV_Ladder_Master workbook · edit blue inputs, everything recalculates
+</footer>
+
+<script>
+// ========== LADDER DATA (from Excel Ladders sheet) ==========
+const LADDERS = {
+  Basic: [
+    { above: 0,  upTo: 8,  band: 'over 0.0 to 8.0',   days: [0.25, 0.50, 0.60, 0.70, 0.80, 0.80, 0.80, 0.80] },
+    { above: 8,  upTo: 16, band: 'over 8.0 to 16.0',  days: [0.20, 0.45, 0.60, 0.70, 0.75, 0.75, 0.75, 0.75] },
+    { above: 16, upTo: 24, band: 'over 16.0 to 24.0', days: [0.18, 0.40, 0.53, 0.63, 0.70, 0.70, 0.70, 0.70] },
+    { above: 24, upTo: 32, band: 'over 24.0 to 32.0', days: [0.17, 0.35, 0.48, 0.57, 0.67, 0.67, 0.67, 0.67] },
+    { above: 32, upTo: 40, band: 'over 32.0 to 40.0', days: [0.15, 0.30, 0.45, 0.55, 0.63, 0.63, 0.63, 0.63] },
+    { above: 40, upTo: 48, band: 'over 40.0 to 48.0', days: [0.10, 0.25, 0.40, 0.50, 0.60, 0.60, 0.60, 0.60] },
+    { above: 48, upTo: 53, band: 'over 48.0 to 53.0', days: [0.07, 0.25, 0.35, 0.45, 0.55, 0.57, 0.57, 0.57] },
+    { above: 53, upTo: 58, band: 'over 53.0 to 58.0', days: [0.05, 0.20, 0.30, 0.40, 0.50, 0.55, 0.55, 0.55] },
+    { above: 58, upTo: 63, band: 'over 58.0 to 63.0', days: [0.05, 0.20, 0.35, 0.40, 0.45, 0.50, 0.50, 0.50] },
+    { above: 63, upTo: 68, band: 'over 63.0 to 68.0', days: [0.05, 0.20, 0.30, 0.37, 0.40, 0.42, 0.42, 0.42] },
+  ],
+  Tight: [
+    { above: 0,  upTo: 8,  band: 'over 0.0 to 8.0',   days: [0.25, 0.60, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85] },
+    { above: 8,  upTo: 16, band: 'over 8.0 to 16.0',  days: [0.20, 0.53, 0.77, 0.77, 0.77, 0.77, 0.77, 0.77] },
+    { above: 16, upTo: 24, band: 'over 16.0 to 24.0', days: [0.18, 0.47, 0.65, 0.75, 0.75, 0.75, 0.75, 0.75] },
+    { above: 24, upTo: 32, band: 'over 24.0 to 32.0', days: [0.17, 0.45, 0.62, 0.72, 0.72, 0.72, 0.72, 0.72] },
+    { above: 32, upTo: 40, band: 'over 32.0 to 40.0', days: [0.15, 0.42, 0.59, 0.69, 0.69, 0.69, 0.69, 0.69] },
+    { above: 40, upTo: 48, band: 'over 40.0 to 48.0', days: [0.15, 0.41, 0.58, 0.68, 0.68, 0.68, 0.68, 0.68] },
+    { above: 48, upTo: 53, band: 'over 48.0 to 53.0', days: [0.13, 0.38, 0.55, 0.65, 0.65, 0.65, 0.65, 0.65] },
+    { above: 53, upTo: 58, band: 'over 53.0 to 58.0', days: [0.13, 0.36, 0.53, 0.63, 0.63, 0.63, 0.63, 0.63] },
+    { above: 58, upTo: 63, band: 'over 58.0 to 63.0', days: [0.09, 0.29, 0.44, 0.52, 0.55, 0.55, 0.55, 0.55] },
+    { above: 63, upTo: 68, band: 'over 63.0 to 68.0', days: [0.05, 0.21, 0.33, 0.41, 0.45, 0.47, 0.47, 0.47] },
+  ],
+  Complex: [
+    { above: 0,  upTo: 8,  band: 'over 0.0 to 8.0',   days: [0.10, 0.25, 0.40, 0.50, 0.57, 0.62, 0.62, 0.62] },
+    { above: 8,  upTo: 16, band: 'over 8.0 to 16.0',  days: [0.10, 0.25, 0.40, 0.50, 0.55, 0.60, 0.60, 0.60] },
+    { above: 16, upTo: 24, band: 'over 16.0 to 24.0', days: [0.10, 0.23, 0.35, 0.45, 0.52, 0.57, 0.57, 0.57] },
+    { above: 24, upTo: 32, band: 'over 24.0 to 32.0', days: [0.10, 0.20, 0.30, 0.40, 0.50, 0.55, 0.55, 0.55] },
+    { above: 32, upTo: 40, band: 'over 32.0 to 40.0', days: [0.05, 0.17, 0.27, 0.35, 0.43, 0.48, 0.50, 0.50] },
+    { above: 40, upTo: 48, band: 'over 40.0 to 48.0', days: [0.05, 0.15, 0.25, 0.35, 0.40, 0.45, 0.47, 0.47] },
+    { above: 48, upTo: 53, band: 'over 48.0 to 53.0', days: [0.05, 0.13, 0.23, 0.33, 0.37, 0.42, 0.44, 0.44] },
+    { above: 53, upTo: 58, band: 'over 53.0 to 58.0', days: [0.05, 0.10, 0.20, 0.30, 0.35, 0.40, 0.42, 0.42] },
+    { above: 58, upTo: 63, band: 'over 58.0 to 63.0', days: [0.03, 0.10, 0.20, 0.30, 0.35, 0.38, 0.40, 0.40] },
+    { above: 63, upTo: 68, band: 'over 63.0 to 68.0', days: [0.05, 0.20, 0.30, 0.37, 0.40, 0.42, 0.42, 0.42] },
+  ]
+};
+
+// Typical SMV used per band (from Matrix sheet)
+const TYPICAL_SMV = [5.65, 12, 20, 28, 36, 44, 50.5, 55.5, 60.5, 65.5];
+
+const ALT_LEAD_TIMES = [24, 7, 10, 12, 14, 21, 25, 30, 40];
+const ALT_QUANTITIES = [750, 1500, 2500, 3750, 5000, 7500, 12500, 20000];
+
+// ========== CORE ENGINE ==========
+function findBand(ladderType, smv) {
+  const bands = LADDERS[ladderType] || LADDERS.Tight;
+  for (const b of bands) {
+    if (smv > b.above && smv <= b.upTo) return b;
+  }
+  // fallback to last band if SMV > 68
+  return bands[bands.length - 1];
+}
+
+function getManualPcs(target) {
+  // Manual avg pcs/hour wins; otherwise a manual avg efficiency % of the 100% target.
+  const pEl = document.getElementById('manualPcs');
+  const eEl = document.getElementById('manualEff');
+  const p = pEl ? parseFloat(pEl.value) : 0;
+  if (p > 0) return p;
+  const e = eEl ? parseFloat(eEl.value) : 0;
+  return (e > 0 && target > 0) ? (e / 100) * target : 0;
+}
+function getDayEfficiency(band, dayIndex, effGap) {
+  // dayIndex 0-based; after day 8 use day-8 value
+  const idx = Math.min(dayIndex, 7);
+  return Math.max(0, band.days[idx] - (effGap || 0));
+}
+
+function target100(manpower, smv) {
+  return (60 * manpower) / smv;
+}
+
+/**
+ * Simulate production for a given quantity on one line over maxDays.
+ * Returns day-by-day plan and summary.
+ */
+function simulateLine(qty, band, target, hoursDay, maxDays, effGap) {
+  // Manual avg pcs/hour: keep the ladder's day-by-day SHAPE, scale its LEVEL so this line
+  // sews qty in exactly qty / manual hours (its average production per hour = manual).
+  const manual = getManualPcs(target);
+  let scale = 1;
+  if (manual > 0 && qty < 1e11) {
+    const H = qty / manual;
+    const f = Math.floor(H / hoursDay + 1e-9);
+    const r = Math.max(0, H - f * hoursDay);
+    let cum = 0;
+    for (let i = 0; i < f; i++) cum += getDayEfficiency(band, i, effGap);
+    const nextEff = r > 1e-9 ? getDayEfficiency(band, f, effGap) : 0;
+    const denom = hoursDay * cum + r * nextEff;
+    scale = denom > 0 ? (qty / denom) / target : 1;
+  }
+  let remaining = qty;
+  const days = [];
+  let totalOutput = 0;
+  let totalHours = 0;
+
+  for (let d = 0; d < maxDays && remaining > 1e-9; d++) {
+    const eff = getDayEfficiency(band, d, effGap) * scale;
+    const pcsHour = target * eff;
+    const capacity = pcsHour * hoursDay;
+    const output = Math.min(capacity, remaining);
+    const hoursUsed = capacity > 0 ? output / pcsHour : 0;
+    remaining -= output;
+    totalOutput += output;
+    totalHours += hoursUsed;
+    days.push({
+      day: d + 1,
+      efficiency: eff,
+      pcsHour,
+      hours: hoursUsed,
+      output,
+      remaining: Math.max(0, remaining)
+    });
+  }
+  const avgPcsHour = manual > 0 ? Math.round(manual * 100) / 100 : (totalHours > 0 ? Math.floor(totalOutput / totalHours) : 0);
+  const avgEff = target > 0 ? (manual > 0 ? manual : avgPcsHour) / target : 0;
+  return {
+    days,
+    totalOutput,
+    totalHours,
+    avgPcsHour,
+    avgEff,
+    daysUsed: days.length,
+    finished: remaining < 1e-6
+  };
+}
+
+/**
+ * Full multi-line plan: lines run sequentially.
+ * Each full line sews as much as it can inside leadTime; last line takes remainder.
+ */
+function planOrder(smv, manpower, quantity, leadTime, hoursDay, ladderType, effGap) {
+  const band = findBand(ladderType, smv);
+  const target = target100(manpower, smv);
+  // Capacity of one full line inside leadTime
+  const fullSim = simulateLine(1e12, band, target, hoursDay, leadTime, effGap);
+  const manualAvg = getManualPcs(target);
+  // with a manual average a full line sews exactly manual x lead time x hours/day
+  const qtyPerFullLine = manualAvg > 0 ? manualAvg * leadTime * hoursDay : fullSim.totalOutput;
+
+  let remaining = quantity;
+  const lines = [];
+  let lineNum = 0;
+
+  while (remaining > 1e-6) {
+    lineNum++;
+    const take = Math.min(remaining, qtyPerFullLine);
+    const sim = simulateLine(take, band, target, hoursDay, leadTime, effGap);
+    lines.push({
+      line: lineNum,
+      quantity: take,
+      days: sim.daysUsed,
+      lineHours: sim.totalHours,
+      avgEff: sim.avgEff,
+      avgPcsHour: sim.avgPcsHour,
+      dayPlan: sim.days
+    });
+    remaining -= take;
+    // safety
+    if (lineNum > 500) break;
+  }
+
+  const totalHours = lines.reduce((s, l) => s + l.lineHours, 0);
+  const totalOutput = quantity;
+  const manualBlend = getManualPcs(target);
+  const avgPcsHour = manualBlend > 0 ? Math.round(manualBlend * 100) / 100 : (totalHours > 0 ? Math.floor(totalOutput / totalHours) : 0);
+  const avgEff = target > 0 ? (manualBlend > 0 ? manualBlend : avgPcsHour) / target : 0;
+  // Line-wise best: the best single line (normally a full line)
+  const bestPcsHour = Math.max(...lines.map(l => l.avgPcsHour));
+  const bestEff = Math.max(...lines.map(l => l.avgEff));
+  const useBest = getAvgBasis() === 'best';
+
+  return {
+    band,
+    target,
+    qtyPerFullLine,
+    lines,
+    totalHours,
+    avgPcsHour,
+    avgEff,
+    bestPcsHour,
+    bestEff,
+    headPcs: useBest ? bestPcsHour : avgPcsHour,
+    headEff: useBest ? bestEff : avgEff,
+    numLines: lines.length
+  };
+}
+
+// ========== UI ==========
+function getAvgBasis() {
+  const el = document.getElementById('avgBasis');
+  return el ? el.value : 'best';
+}
+function getLabels() {
+  const best = getAvgBasis() === 'best';
+  return {
+    eff: best ? 'Best efficiency' : 'Avg efficiency',
+    pcs: best ? 'Best pcs / hour' : 'Avg pcs / hour',
+    effShort: best ? 'Best eff.' : 'Avg eff.',
+    mxEff: best ? 'Best-line efficiency' : 'Average efficiency',
+    mxPcs: best ? 'Best-line pcs / hour' : 'Average pcs / hour',
+    qty: best ? 'Best-line efficiency vs quantity' : 'Average efficiency vs quantity'
+  };
+}
+function applyLabels() {
+  const L = getLabels();
+  const hint = document.getElementById('manualHint');
+  if (hint) hint.style.display = (parseFloat(document.getElementById('manualPcs').value) > 0 && parseFloat(document.getElementById('manualEff').value) > 0) ? 'block' : 'none';
+  document.querySelectorAll('[data-lbl]').forEach(el => { el.textContent = L[el.dataset.lbl]; });
+  return L;
+}
+function fmt(n, d = 2) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: 0 });
+}
+function pct(n) {
+  return (n * 100).toFixed(2) + '%';
+}
+
+function runPlanner() {
+  const smv = +document.getElementById('smv').value;
+  const manpower = +document.getElementById('manpower').value;
+  const quantity = +document.getElementById('quantity').value;
+  const leadTime = +document.getElementById('leadTime').value;
+  const hoursDay = +document.getElementById('hoursDay').value;
+  const ladderType = document.getElementById('ladderType').value;
+  const effGap = +document.getElementById('effGap').value;
+
+  const L = applyLabels();
+  const plan = planOrder(smv, manpower, quantity, leadTime, hoursDay, ladderType, effGap);
+
+  // Band info
+  const manualPcs = getManualPcs(plan.target);
+  const line1Peak = plan.lines.length ? Math.max(...plan.lines[0].dayPlan.map(x => x.pcsHour)) : 0;
+  document.getElementById('bandInfo').innerHTML = manualPcs > 0
+    ? `<span class="band-tag">${ladderType} · ${plan.band.band}</span><br>
+     Target @ 100%: <strong>${fmt(plan.target, 2)}</strong> pcs/hour<br>
+     Manual avg held: <strong>${fmt(manualPcs, 2)}</strong> pcs/hour
+     (<strong>${pct(manualPcs / plan.target)}</strong> avg efficiency)<br>
+     Ladder shape peaks at ${fmt(line1Peak, 1)} pcs/hour
+     ${manualPcs > plan.target ? '<br><strong style="color:var(--orange)">⚠ Above the 100% target.</strong>' : ''}`
+    : `<span class="band-tag">${ladderType} · ${plan.band.band}</span><br>
+     Target @ 100%: <strong>${fmt(plan.target, 2)}</strong> pcs/hour<br>
+     Peak efficiency (day 6–8): <strong>${pct(Math.max(0, plan.band.days[7] - effGap))}</strong>
+     → ${fmt(plan.target * Math.max(0, plan.band.days[7] - effGap), 1)} pcs/hour`;
+
+  // KPIs
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi green"><div class="value">${pct(plan.headEff)}</div><div class="label">${L.eff}</div></div>
+    <div class="kpi"><div class="value">${plan.headPcs}</div><div class="label">${L.pcs}</div></div>
+    <div class="kpi yellow"><div class="value">${fmt(plan.target, 1)}</div><div class="label">Target @ 100%</div></div>
+    <div class="kpi orange"><div class="value">${plan.numLines} × ${leadTime}</div><div class="label">Lines × days</div></div>
+    <div class="kpi"><div class="value">${fmt(plan.totalHours, 1)}</div><div class="label">Total line hours</div></div>
+    <div class="kpi"><div class="value">${fmt(plan.qtyPerFullLine, 0)}</div><div class="label">Pcs per full line</div></div>
+  `;
+
+  // Day plan for line 1
+  const line1 = plan.lines[0];
+  const tbody = document.querySelector('#dayPlanTable tbody');
+  tbody.innerHTML = line1.dayPlan.map(d => `
+    <tr>
+      <td>${d.day}</td>
+      <td>${pct(d.efficiency)}
+        <div class="eff-bar"><div class="eff-bar-fill" style="width:${Math.min(100, d.efficiency * 100)}%"></div></div>
+      </td>
+      <td>${fmt(d.pcsHour, 2)}</td>
+      <td>${fmt(d.hours, 2)}</td>
+      <td>${fmt(d.output, 1)}</td>
+      <td>${fmt(d.remaining, 1)}</td>
+    </tr>
+  `).join('');
+
+  // Line cards + table
+  document.getElementById('lineCards').innerHTML = plan.lines.map(l => `
+    <div class="line-card">
+      <div class="ln">Line ${l.line}${l.line === plan.numLines && plan.numLines > 1 ? ' (last)' : ''}</div>
+      <div class="qty">${fmt(l.quantity, 0)} pcs</div>
+      <div class="meta">${l.days} days · ${fmt(l.lineHours, 1)} h · ${pct(l.avgEff)} · ${l.avgPcsHour} pcs/h</div>
+    </div>
+  `).join('');
+
+  document.querySelector('#lineTable tbody').innerHTML = plan.lines.map(l => `
+    <tr>
+      <td>${l.line}</td>
+      <td>${fmt(l.quantity, 1)}</td>
+      <td>${l.days}</td>
+      <td>${fmt(l.lineHours, 2)}</td>
+      <td>${pct(l.avgEff)}</td>
+      <td>${l.avgPcsHour}</td>
+    </tr>
+  `).join('') + `
+    <tr style="font-weight:600;background:var(--surface2)">
+      <td>All lines</td>
+      <td>${fmt(quantity, 0)}</td>
+      <td>${leadTime}</td>
+      <td>${fmt(plan.totalHours, 2)}</td>
+      <td>${pct(plan.avgEff)}</td>
+      <td>${plan.avgPcsHour}</td>
+    </tr>
+  `;
+
+  // Alt lead times
+  document.querySelector('#altLTTable tbody').innerHTML = ALT_LEAD_TIMES.map(lt => {
+    const p = planOrder(smv, manpower, quantity, lt, hoursDay, ladderType, effGap);
+    const isCurrent = lt === leadTime;
+    return `<tr style="${isCurrent ? 'background:rgba(47,109,181,0.12);font-weight:600' : ''}">
+      <td>${lt}${isCurrent ? ' ★' : ''}</td>
+      <td>${pct(p.headEff)}</td>
+      <td>${p.headPcs}</td>
+      <td>${lt}</td>
+      <td>${p.numLines}</td>
+    </tr>`;
+  }).join('');
+
+  // Alt quantities
+  document.querySelector('#altQtyTable tbody').innerHTML = ALT_QUANTITIES.map(q => {
+    const p = planOrder(smv, manpower, q, leadTime, hoursDay, ladderType, effGap);
+    return `<tr>
+      <td>${fmt(q, 0)}</td>
+      <td>${pct(p.headEff)}</td>
+      <td>${p.headPcs}</td>
+      <td>${p.lines[p.lines.length - 1].days}</td>
+      <td>${p.numLines}</td>
+    </tr>`;
+  }).join('');
+
+  // Also refresh matrix
+  buildMatrix();
+}
+
+function buildMatrix() {
+  const manpower = +document.getElementById('manpower').value;
+  const quantity = +document.getElementById('quantity').value;
+  const hoursDay = +document.getElementById('hoursDay').value;
+  const ladderType = document.getElementById('ladderType').value;
+  const effGap = +document.getElementById('effGap').value;
+  const leadTimes = [40, 30, 25, 21, 14, 12, 10, 7];
+  const bands = LADDERS[ladderType];
+
+  function makeHeader() {
+    return `<thead><tr><th>SMV range</th><th>SMV used</th><th>Target @ 100%</th>${leadTimes.map(lt => `<th>${lt}</th>`).join('')}</tr></thead>`;
+  }
+
+  let effRows = '', pcsRows = '', lineRows = '';
+  bands.forEach((b, i) => {
+    const smvUsed = TYPICAL_SMV[i];
+    const target = target100(manpower, smvUsed);
+    const cellsEff = [], cellsPcs = [], cellsLines = [];
+    leadTimes.forEach(lt => {
+      const p = planOrder(smvUsed, manpower, quantity, lt, hoursDay, ladderType, effGap);
+      cellsEff.push(`<td>${pct(p.headEff)}</td>`);
+      cellsPcs.push(`<td>${p.headPcs}</td>`);
+      cellsLines.push(`<td>${p.numLines} × ${lt}</td>`);
+    });
+    const label = `<td>${b.band}</td><td>${smvUsed}</td><td>${fmt(target, 1)}</td>`;
+    effRows += `<tr>${label}${cellsEff.join('')}</tr>`;
+    pcsRows += `<tr>${label}${cellsPcs.join('')}</tr>`;
+    lineRows += `<tr>${label}${cellsLines.join('')}</tr>`;
+  });
+
+  document.getElementById('matrixEff').innerHTML = makeHeader() + `<tbody>${effRows}</tbody>`;
+  document.getElementById('matrixPcs').innerHTML = makeHeader() + `<tbody>${pcsRows}</tbody>`;
+  document.getElementById('matrixLines').innerHTML = makeHeader() + `<tbody>${lineRows}</tbody>`;
+}
+
+function buildLaddersView() {
+  const container = document.getElementById('ladderTables');
+  let html = '';
+  ['Basic', 'Tight', 'Complex'].forEach(type => {
+    html += `<div class="section-title">${type} ladder</div>
+      <div class="table-wrap" style="max-height:none;margin-bottom:1.5rem">
+      <table class="ladder-table">
+        <thead>
+          <tr>
+            <th>SMV range</th>
+            <th>Day 1</th><th>Day 2</th><th>Day 3</th><th>Day 4</th>
+            <th>Day 5</th><th>Day 6</th><th>Day 7</th><th>Day 8+</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${LADDERS[type].map(b => `
+            <tr>
+              <td>${b.band}</td>
+              ${b.days.map(d => `<td>${(d * 100).toFixed(0)}%</td>`).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      </div>`;
+  });
+  container.innerHTML = html;
+}
+
+// ========== PRINT / PDF ==========
+function buildPrintReport(plan, inputs) {
+  const LP = getLabels();
+  const { smv, manpower, quantity, leadTime, hoursDay, ladderType, effGap } = inputs;
+  const now = new Date().toLocaleString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+  const line1 = plan.lines[0];
+  const manualPcs = getManualPcs(plan.target);
+  const peakPcs = manualPcs > 0 && plan.lines.length ? Math.max(...plan.lines[0].dayPlan.map(x => x.pcsHour)) : plan.target * Math.max(0, plan.band.days[7] - (effGap || 0));
+  const peakEff = peakPcs / plan.target;
+  const dailyTarget100 = plan.target * hoursDay;
+  const totalManHours = plan.totalHours * manpower;
+
+  // Mark peak efficiency days (stable plateau)
+  const peakDayEff = peakEff;
+  const dayRows = line1.dayPlan.map(d => {
+    const isPeak = Math.abs(d.efficiency - peakDayEff) < 1e-9 && d.day >= 6;
+    return `<tr class="${isPeak ? 'row-peak' : ''}">
+      <td>${d.day}</td>
+      <td>${pct(d.efficiency)}</td>
+      <td>${fmt(d.pcsHour, 2)}</td>
+      <td>${fmt(d.hours, 2)}</td>
+      <td>${fmt(d.output, 1)}</td>
+      <td>${fmt(d.remaining, 1)}</td>
+    </tr>`;
+  }).join('');
+
+  const lineRows = plan.lines.map((l, i) => {
+    const isLast = i === plan.lines.length - 1 && plan.lines.length > 1;
+    return `<tr>
+      <td>Line ${l.line}${isLast ? ' (last)' : ''}</td>
+      <td>${fmt(l.quantity, 1)}</td>
+      <td>${l.days}</td>
+      <td>${fmt(l.lineHours, 2)}</td>
+      <td>${pct(l.avgEff)}</td>
+      <td>${l.avgPcsHour}</td>
+    </tr>`;
+  }).join('') +
+  `<tr class="row-total">
+    <td>All lines (blended)</td>
+    <td>${fmt(quantity, 0)}</td>
+    <td>${leadTime}</td>
+    <td>${fmt(plan.totalHours, 2)}</td>
+    <td>${pct(plan.avgEff)}</td>
+    <td>${plan.avgPcsHour}</td>
+  </tr>`;
+
+  const altLT = ALT_LEAD_TIMES.map(lt => {
+    const p = planOrder(smv, manpower, quantity, lt, hoursDay, ladderType, effGap);
+    const cur = lt === leadTime;
+    return `<tr class="${cur ? 'row-current' : ''}">
+      <td>${lt}${cur ? ' ★ plan' : ''}</td>
+      <td>${pct(p.headEff)}</td>
+      <td>${p.headPcs}</td>
+      <td>${p.numLines}</td>
+      <td>${fmt(p.totalHours, 1)}</td>
+    </tr>`;
+  }).join('');
+
+  const altQty = ALT_QUANTITIES.map(q => {
+    const p = planOrder(smv, manpower, q, leadTime, hoursDay, ladderType, effGap);
+    return `<tr>
+      <td>${fmt(q, 0)}</td>
+      <td>${pct(p.headEff)}</td>
+      <td>${p.headPcs}</td>
+      <td>${p.lines[p.lines.length - 1].days}</td>
+      <td>${p.numLines}</td>
+    </tr>`;
+  }).join('');
+
+  // Ladder ramp for this band (with gap applied)
+  const rampCells = plan.band.days.map((e, i) => {
+    const v = Math.max(0, e - (effGap || 0));
+    return `<div class="rd">
+      <div class="rd-d">Day ${i + 1}${i === 7 ? '+' : ''}</div>
+      <div class="rd-e">${(v * 100).toFixed(0)}%</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('printReport').innerHTML = `
+    <div class="pr-header">
+      <div>
+        <h1>SMV Productivity Ladder Plan</h1>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:10pt">
+        ${pictureData ? `<div class="pr-pic"><img src="${pictureData}" alt=""><div class="cap">${escapeHtml(getPicCaption())}</div></div>` : ''}
+        <div class="pr-brand">
+          SMV Ladder Planner<br>
+          ${now}
+        </div>
+      </div>
+    </div>
+
+    <div class="pr-sub">
+      <span class="pr-badge">${ladderType}</span>
+      <span class="pr-badge">${plan.band.band}</span>
+      ${effGap > 0 ? `<span class="pr-badge">EFF gap −${effGap}</span>` : ''}
+      ${manualPcs > 0 ? `<span class="pr-badge">Avg held ${fmt(manualPcs, 2)} pcs/h (manual)</span>` : ''}
+      Peak ${pct(peakEff)} → ${fmt(peakPcs, 1)} pcs/h · Daily target @ 100%: ${fmt(dailyTarget100, 0)} pcs/line
+    </div>
+
+    <div class="pr-meta">
+      <div><div class="pm-label">SMV</div><div class="pm-value">${smv} min</div></div>
+      <div><div class="pm-label">Manpower</div><div class="pm-value">${manpower}</div></div>
+      <div><div class="pm-label">Quantity</div><div class="pm-value">${fmt(quantity, 0)}</div></div>
+      <div><div class="pm-label">Lead time</div><div class="pm-value">${leadTime} d</div></div>
+      <div><div class="pm-label">Hours / day</div><div class="pm-value">${hoursDay} h</div></div>
+      <div><div class="pm-label">Target @ 100%</div><div class="pm-value">${fmt(plan.target, 1)} /h</div></div>
+    </div>
+
+    <div class="pr-kpi">
+      <div class="box accent"><div class="kv">${pct(plan.headEff)}</div><div class="kl">${LP.eff}</div></div>
+      <div class="box accent"><div class="kv">${plan.headPcs}</div><div class="kl">${LP.pcs}</div></div>
+      <div class="box"><div class="kv">${plan.numLines} × ${leadTime}</div><div class="kl">Lines × days</div></div>
+      <div class="box"><div class="kv">${fmt(plan.totalHours, 1)}</div><div class="kl">Total line hours</div></div>
+      <div class="box"><div class="kv">${fmt(totalManHours, 0)}</div><div class="kl">Man-hours</div></div>
+      <div class="box"><div class="kv">${fmt(plan.qtyPerFullLine, 0)}</div><div class="kl">Pcs / full line</div></div>
+    </div>
+
+    <div class="pr-section">
+      <h2>Efficiency ramp (${ladderType} · ${plan.band.band})</h2>
+      <div class="pr-ramp">${rampCells}</div>
+    </div>
+
+    <div class="pr-section">
+      <h2>Day plan — Line 1 of ${plan.numLines}</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Day</th><th>Efficiency</th><th>Pcs / hour</th>
+            <th>Hours</th><th>Output (pcs)</th><th>Remaining</th>
+          </tr>
+        </thead>
+        <tbody>${dayRows}</tbody>
+      </table>
+    </div>
+
+    <div class="pr-section">
+      <h2>Line by line (sequential)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Line</th><th>Quantity (pcs)</th><th>Days</th>
+            <th>Line hours</th><th>Avg efficiency</th><th>Avg pcs / hour</th>
+          </tr>
+        </thead>
+        <tbody>${lineRows}</tbody>
+      </table>
+      <div class="pr-note">
+        Each full line sews the maximum possible inside the lead time; the next line takes the remainder.
+        ${manualPcs > 0
+          ? 'With a manual average, every line (including the last) averages the manual pcs/hour; the last line simply carries fewer pieces.'
+          : 'The last line therefore sits lower on the efficiency ladder and pulls the blended average down slightly.'}
+        Green rows = peak (plateau) efficiency days.
+      </div>
+    </div>
+
+    <div class="pr-cols">
+      <div>
+        <h2>Same quantity · other lead times</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Lead time</th><th>${LP.effShort}</th><th>Pcs / h</th><th>Lines</th><th>Hours</th>
+            </tr>
+          </thead>
+          <tbody>${altLT}</tbody>
+        </table>
+      </div>
+      <div>
+        <h2>Same lead time · other quantities</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Quantity</th><th>${LP.effShort}</th><th>Pcs / h</th><th>Days</th><th>Lines</th>
+            </tr>
+          </thead>
+          <tbody>${altQty}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="pr-footer">
+      <span>SMV Productivity Ladder Planner · ${ladderType} ladder${manualPcs > 0 ? ' · manual avg' : ''} · Peak ${pct(peakEff)} (${fmt(peakPcs, 1)} pcs/h)</span>
+      <span>Generated ${now}</span>
+    </div>
+  `;
+}
+
+function getInputs() {
+  return {
+    smv: +document.getElementById('smv').value,
+    manpower: +document.getElementById('manpower').value,
+    quantity: +document.getElementById('quantity').value,
+    leadTime: +document.getElementById('leadTime').value,
+    hoursDay: +document.getElementById('hoursDay').value,
+    ladderType: document.getElementById('ladderType').value,
+    effGap: +document.getElementById('effGap').value
+  };
+}
+
+function doPrint() {
+  const inputs = getInputs();
+  const plan = planOrder(inputs.smv, inputs.manpower, inputs.quantity, inputs.leadTime, inputs.hoursDay, inputs.ladderType, inputs.effGap);
+  buildPrintReport(plan, inputs);
+  // Brief delay so DOM updates before print
+  setTimeout(() => window.print(), 100);
+}
+
+function doExportPDF() {
+  // Same printable report; user chooses "Save as PDF" in the print dialog
+  const inputs = getInputs();
+  const plan = planOrder(inputs.smv, inputs.manpower, inputs.quantity, inputs.leadTime, inputs.hoursDay, inputs.ladderType, inputs.effGap);
+  buildPrintReport(plan, inputs);
+  // Suggest filename via document title temporarily
+  const prevTitle = document.title;
+  document.title = `SMV_Plan_${inputs.smv}min_${inputs.quantity}pcs_${inputs.leadTime}d_${inputs.ladderType}`;
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { document.title = prevTitle; }, 500);
+  }, 100);
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'matrix') buildMatrix();
+  });
+});
+
+// ========== STYLE PICTURE ==========
+const PIC_KEY = 'smvLadderPlanner.picture';
+const PIC_CAP_KEY = 'smvLadderPlanner.pictureCaption';
+let pictureData = null;
+try { pictureData = localStorage.getItem(PIC_KEY); } catch (e) {}
+function escapeHtml(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function getPicCaption() {
+  const el = document.getElementById('picCaption');
+  return el ? el.value.trim() : '';
+}
+function renderPicture() {
+  const box = document.getElementById('picBox');
+  box.innerHTML = pictureData
+    ? `<img src="${pictureData}" alt="Style picture">`
+    : `<div class="pic-empty">Click, drop or paste<br>a style picture<span>JPG · PNG · WebP</span></div>`;
+  document.getElementById('picRemove').disabled = !pictureData;
+  document.getElementById('picAdd').textContent = pictureData ? 'Change picture' : 'Add picture';
+}
+function setPicture(dataUrl) {
+  pictureData = dataUrl || null;
+  try {
+    if (pictureData) localStorage.setItem(PIC_KEY, pictureData); else localStorage.removeItem(PIC_KEY);
+  } catch (e) { /* storage full or blocked: picture still works for this session */ }
+  renderPicture();
+}
+function loadPictureFile(file) {
+  if (!file || !file.type || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      // shrink big photos so they stay light and save in the browser
+      const max = 900;
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.width * k));
+      c.height = Math.max(1, Math.round(img.height * k));
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      setPicture(c.toDataURL('image/jpeg', 0.85));
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+(function initPicture() {
+  const box = document.getElementById('picBox');
+  const file = document.getElementById('picFile');
+  const cap = document.getElementById('picCaption');
+  try { cap.value = localStorage.getItem(PIC_CAP_KEY) || ''; } catch (e) {}
+  renderPicture();
+  box.addEventListener('click', () => file.click());
+  document.getElementById('picAdd').addEventListener('click', () => file.click());
+  document.getElementById('picRemove').addEventListener('click', () => { setPicture(null); file.value = ''; });
+  file.addEventListener('change', () => { loadPictureFile(file.files[0]); file.value = ''; });
+  ['dragenter', 'dragover'].forEach(ev => box.addEventListener(ev, e => { e.preventDefault(); box.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach(ev => box.addEventListener(ev, e => { e.preventDefault(); box.classList.remove('drag'); }));
+  box.addEventListener('drop', e => loadPictureFile(e.dataTransfer.files[0]));
+  document.addEventListener('paste', e => {
+    const item = [...(e.clipboardData ? e.clipboardData.items : [])].find(i => i.type.startsWith('image/'));
+    if (item) loadPictureFile(item.getAsFile());
+  });
+  cap.addEventListener('input', () => { try { localStorage.setItem(PIC_CAP_KEY, cap.value); } catch (e) {} });
+})();
+
+// Live recalculate on input change
+['smv', 'manpower', 'quantity', 'leadTime', 'hoursDay', 'ladderType', 'effGap', 'avgBasis', 'manualPcs', 'manualEff'].forEach(id => {
+  document.getElementById(id).addEventListener('change', runPlanner);
+  document.getElementById(id).addEventListener('input', () => {
+    clearTimeout(window._debounce);
+    window._debounce = setTimeout(runPlanner, 300);
+  });
+});
+
+// Init
+buildLaddersView();
+runPlanner();
+</script>
+</body>
+</html>
