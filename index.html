@@ -312,6 +312,37 @@
   .pic-box .pic-empty span { display: block; font-size: 0.7rem; margin-top: 0.2rem; opacity: 0.85; }
   .pic-cap { font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 0.4rem; }
   .btn:disabled { opacity: 0.45; cursor: default; }
+  /* ladder editing + password modal */
+  .lad-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; margin-bottom: 1rem; }
+  .lad-status { font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 999px;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  .lad-status.open { background: #e6f4ea; border-color: #b7dfc3; color: var(--green); }
+  .lad-edited { font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 999px;
+    background: #fff4e5; border: 1px solid #f3d3a6; color: var(--orange); }
+  .lad-actions { margin-left: auto; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .lad-actions .btn, .lad-actions .btn-secondary { width: auto; padding: 0.4rem 0.9rem; font-size: 0.78rem; }
+  .lad-msg { font-size: 0.78rem; margin: -0.4rem 0 0.9rem; min-height: 1.1rem; color: var(--muted); }
+  .lad-msg.err { color: var(--red); font-weight: 600; }
+  .lad-msg.ok { color: var(--green); font-weight: 600; }
+  .lad-warn { font-size: 0.78rem; color: var(--orange); margin-bottom: 0.8rem; }
+  .lad-in { width: 100%; min-width: 3.4rem; max-width: 5.2rem; padding: 0.3rem 0.35rem; text-align: center;
+    background: var(--blue-input); color: var(--blue-text); border: 1px solid #a9c4e6; border-radius: 0.3rem;
+    font: inherit; font-size: 0.78rem; }
+  .lad-in:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(47,109,181,0.25); }
+  .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: flex; align-items: center;
+    justify-content: center; z-index: 1000; }
+  .modal { background: var(--surface); border-radius: 0.75rem; padding: 1.4rem 1.5rem; width: min(380px, 92vw);
+    box-shadow: 0 20px 50px rgba(15,23,42,0.35); border: 1px solid var(--border); }
+  .modal h3 { font-size: 1rem; color: var(--accent2); margin-bottom: 0.4rem; }
+  .modal p { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.9rem; }
+  .modal label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--muted); margin: 0.6rem 0 0.25rem; }
+  .modal input { width: 100%; padding: 0.55rem 0.7rem; border-radius: 0.4rem; border: 1px solid #a9c4e6;
+    background: var(--blue-input); color: var(--blue-text); font: inherit; font-size: 0.95rem; }
+  .modal input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(47,109,181,0.25); }
+  .modal .err { color: var(--red); font-size: 0.78rem; font-weight: 600; min-height: 1.1rem; margin-top: 0.5rem; }
+  .modal .row { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.9rem; }
+  .modal .row button { width: auto; padding: 0.45rem 1.1rem; }
   footer {
     text-align: center;
     padding: 1.5rem;
@@ -587,7 +618,6 @@
 <body>
 <div class="header">
   <div>
-    <h1>Utah Group(IE Costing) </h1>
     <h1>SMV <span>Productivity Ladder</span> Planner</h1>
     <div class="subtitle">Garment sewing-line efficiency & capacity planner · live recalculation</div>
   </div>
@@ -622,20 +652,20 @@
         <h2>Order Inputs</h2>
         <div class="form-group">
           <label>SMV (minutes per piece)</label>
-          <input type="number" id="smv" value="" >
+          <input type="number" id="smv" value="66.5" step="0.1" min="0.1">
         </div>
         <div class="form-group">
           <label>Manpower (operators on line)</label>
-          <input type="number" id="manpower" value="" >
+          <input type="number" id="manpower" value="70" step="1" min="1">
         </div>
         <div class="form-group">
           <label>Quantity (pcs)</label>
-          <input type="number" id="quantity" value="" >
+          <input type="number" id="quantity" value="50000" step="1" min="1">
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Lead time (days)</label>
-            <input type="number" id="leadTime" value="" >
+            <input type="number" id="leadTime" value="24" step="1" min="1" max="60">
           </div>
           <div class="form-group">
             <label>Hours / day</label>
@@ -645,9 +675,9 @@
         <div class="form-group">
           <label>Ladder</label>
           <select id="ladderType">
-           <option value="Basic" selected>Basic</option>
-          <option value="Tight">Tight</option>
-          <option value="Complex">Complex</option>
+            <option value="Tight" selected>Tight</option>
+            <option value="Basic">Basic</option>
+            <option value="Complex">Complex</option>
           </select>
         </div>
         <div class="form-group">
@@ -798,6 +828,7 @@
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">
         Day 1–8 efficiency values. After day 8 the day-8 value repeats. Bands touch (no gaps).
       </p>
+      <div id="ladderBar"></div>
       <div id="ladderTables"></div>
     </div>
   </div>
@@ -850,6 +881,97 @@ const LADDERS = {
 
 // Typical SMV used per band (from Matrix sheet)
 const TYPICAL_SMV = [5.65, 12, 20, 28, 36, 44, 50.5, 55.5, 60.5, 65.5];
+
+// ========== LADDER EDITING: saved values, password ==========
+const LADDERS_DEFAULT = JSON.parse(JSON.stringify(LADDERS));   // the original ladder values
+const LAD_TYPES = ['Basic', 'Tight', 'Complex'];
+const LS_LADDERS = 'smvLadderPlanner.ladders';
+const LS_PWHASH = 'smvLadderPlanner.pwhash';
+const PW_SALT = 'smv-ladder-planner|';
+const DEFAULT_PW_HASH = 'a76456548a4bbcc21e801841712bff23a89e3d6e034be7da472e3d50d4d1553e';   // default password is given in the hand-over note; change it from the Ladders tab
+let ladderUnlocked = false;
+
+function bandLabel(a, u) { return `over ${a.toFixed(1)} to ${u.toFixed(1)}`; }
+function ladderSnapshot(src) {
+  const o = {};
+  LAD_TYPES.forEach(t => { o[t] = src[t].map(b => ({ above: b.above, upTo: b.upTo, days: b.days.slice() })); });
+  return o;
+}
+function laddersEdited() {
+  return JSON.stringify(ladderSnapshot(LADDERS)) !== JSON.stringify(ladderSnapshot(LADDERS_DEFAULT));
+}
+function applyLadderSnapshot(snap) {
+  LAD_TYPES.forEach(t => LADDERS[t].forEach((b, i) => {
+    const x = snap[t][i];
+    b.above = x.above; b.upTo = x.upTo; b.days = x.days.slice(); b.band = bandLabel(x.above, x.upTo);
+  }));
+}
+function saveLadders() {
+  try { localStorage.setItem(LS_LADDERS, JSON.stringify(ladderSnapshot(LADDERS))); return true; } catch (e) { return false; }
+}
+function loadSavedLadders() {
+  try {
+    const raw = localStorage.getItem(LS_LADDERS);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    for (const t of LAD_TYPES) {
+      if (!Array.isArray(saved[t]) || saved[t].length !== LADDERS[t].length) return;
+      for (const b of saved[t]) {
+        if (!(b.above >= 0 && b.upTo > b.above) || !Array.isArray(b.days) || b.days.length !== 8 ||
+            b.days.some(x => !(x >= 0 && x <= 1))) return;
+      }
+    }
+    applyLadderSnapshot(saved);
+  } catch (e) { /* ignore a damaged save: the original ladder stays */ }
+}
+function typicalSmv(type, i) {
+  // matrix "SMV used": the built-in typical value, or the band midpoint once the band limits were edited
+  const d = LADDERS_DEFAULT[type][i], b = LADDERS[type][i];
+  return (d.above === b.above && d.upTo === b.upTo) ? TYPICAL_SMV[i] : Math.round(((b.above + b.upTo) / 2) * 100) / 100;
+}
+// small SHA-256 (works on file:// pages too)
+function sha256Hex(ascii) {
+  const rr = (v, a) => (v >>> a) | (v << (32 - a));
+  const maxWord = Math.pow(2, 32);
+  const words = [], bitLen = ascii.length * 8;
+  const h0 = [], k = [];
+  const comp = {};
+  for (let c = 2, n = 0; n < 64; c++) {
+    if (!comp[c]) {
+      for (let i = 0; i < 313; i += c) comp[i] = c;
+      h0[n] = (Math.pow(c, 0.5) * maxWord) | 0;
+      k[n++] = (Math.pow(c, 1 / 3) * maxWord) | 0;
+    }
+  }
+  ascii += '\x80';
+  while (ascii.length % 64 - 56) ascii += '\x00';
+  for (let i = 0; i < ascii.length; i++) { words[i >> 2] |= ascii.charCodeAt(i) << ((3 - i) % 4) * 8; }
+  words[words.length] = (bitLen / maxWord) | 0;
+  words[words.length] = bitLen;
+  let hash = h0.slice(0, 8);
+  for (let j = 0; j < words.length;) {
+    const w = words.slice(j, j += 16);
+    const old = hash;
+    hash = hash.slice(0, 8);
+    for (let i = 0; i < 64; i++) {
+      const w15 = w[i - 15], w2 = w[i - 2], a = hash[0], e = hash[4];
+      const t1 = hash[7] + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25)) + ((e & hash[5]) ^ (~e & hash[6])) + k[i] +
+        (w[i] = i < 16 ? w[i] : (w[i - 16] + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))) | 0);
+      const t2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+      hash = [(t1 + t2) | 0].concat(hash);
+      hash[4] = (hash[4] + t1) | 0;
+    }
+    for (let i = 0; i < 8; i++) hash[i] = (hash[i] + old[i]) | 0;
+  }
+  let out = '';
+  for (let i = 0; i < 8; i++) for (let j = 3; j + 1; j--) { const b = (hash[i] >> (j * 8)) & 255; out += (b < 16 ? '0' : '') + b.toString(16); }
+  return out;
+}
+function pwHash(pw) { return sha256Hex(PW_SALT + unescape(encodeURIComponent(pw))); }
+function currentPwHash() {
+  try { return localStorage.getItem(LS_PWHASH) || DEFAULT_PW_HASH; } catch (e) { return DEFAULT_PW_HASH; }
+}
+loadSavedLadders();
 
 const ALT_LEAD_TIMES = [24, 7, 10, 12, 14, 21, 25, 30, 40];
 const ALT_QUANTITIES = [750, 1500, 2500, 3750, 5000, 7500, 12500, 20000];
@@ -1064,7 +1186,7 @@ function runPlanner() {
     <div class="kpi yellow"><div class="value">${fmt(plan.target, 1)}</div><div class="label">Target @ 100%</div></div>
     <div class="kpi orange"><div class="value">${plan.numLines} × ${leadTime}</div><div class="label">Lines × days</div></div>
     <div class="kpi"><div class="value">${fmt(plan.totalHours, 1)}</div><div class="label">Total line hours</div></div>
-    <div class="kpi"><div class="value">${fmt(plan.qtyPerFullLine, 0)}</div><div class="label">REQUIRED PCS FOR MAXIMUM PRODUCTIVITY</div></div>
+    <div class="kpi"><div class="value">${fmt(plan.qtyPerFullLine, 0)}</div><div class="label">Required pcs for maximum productivity</div></div>
   `;
 
   // Day plan for line 1
@@ -1156,7 +1278,7 @@ function buildMatrix() {
 
   let effRows = '', pcsRows = '', lineRows = '';
   bands.forEach((b, i) => {
-    const smvUsed = TYPICAL_SMV[i];
+    const smvUsed = typicalSmv(ladderType, i);
     const target = target100(manpower, smvUsed);
     const cellsEff = [], cellsPcs = [], cellsLines = [];
     leadTimes.forEach(lt => {
@@ -1176,33 +1298,185 @@ function buildMatrix() {
   document.getElementById('matrixLines').innerHTML = makeHeader() + `<tbody>${lineRows}</tbody>`;
 }
 
-function buildLaddersView() {
+// ---------- password modal ----------
+function askModal({ title, text, fields = [], okText = 'OK', cancelText = 'Cancel', validate }) {
+  return new Promise(resolve => {
+    const bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    bg.innerHTML = `<div class="modal" role="dialog" aria-modal="true">
+      <h3>${title}</h3><p>${text || ''}</p>
+      ${fields.map(f => `<label for="mf_${f.id}">${f.label}</label><input id="mf_${f.id}" type="${f.type || 'text'}" autocomplete="off">`).join('')}
+      <div class="err" id="mErr"></div>
+      <div class="row"><button class="btn btn-secondary" id="mCancel" type="button">${cancelText}</button>
+      <button class="btn" id="mOk" type="button">${okText}</button></div></div>`;
+    document.body.appendChild(bg);
+    const done = v => { document.removeEventListener('keydown', onKey, true); bg.remove(); resolve(v); };
+    const submit = () => {
+      const vals = {};
+      fields.forEach(f => { vals[f.id] = document.getElementById('mf_' + f.id).value; });
+      const err = validate ? validate(vals) : null;
+      if (err) { document.getElementById('mErr').textContent = err; return; }
+      done(vals);
+    };
+    const onKey = e => {
+      if (e.key === 'Escape') { e.preventDefault(); done(null); }
+      else if (e.key === 'Enter') { e.preventDefault(); submit(); }
+    };
+    document.addEventListener('keydown', onKey, true);
+    document.getElementById('mOk').addEventListener('click', submit);
+    document.getElementById('mCancel').addEventListener('click', () => done(null));
+    bg.addEventListener('mousedown', e => { if (e.target === bg) done(null); });
+    const first = bg.querySelector('input');
+    if (first) first.focus(); else document.getElementById('mOk').focus();
+  });
+}
+
+let pwFails = 0, pwLockedUntil = 0;
+async function unlockLadders() {
+  const r = await askModal({
+    title: '🔒 Unlock ladder editing',
+    text: 'Enter the password to edit the efficiency ladders.',
+    fields: [{ id: 'pw', label: 'Password', type: 'password' }],
+    okText: 'Unlock',
+    validate: v => {
+      const now = Date.now();
+      if (now < pwLockedUntil) return `Too many wrong tries. Wait ${Math.ceil((pwLockedUntil - now) / 1000)} s.`;
+      if (pwHash(v.pw) === currentPwHash()) { pwFails = 0; return null; }
+      if (++pwFails >= 5) { pwFails = 0; pwLockedUntil = now + 30000; return 'Wrong password. Locked for 30 s.'; }
+      return 'Wrong password.';
+    }
+  });
+  if (r) { ladderUnlocked = true; renderLadders(); ladMsg('Unlocked. Changes save automatically and recalculate everything.', 'ok'); }
+}
+function lockLadders() { ladderUnlocked = false; renderLadders(); }
+async function changeLadderPassword() {
+  const r = await askModal({
+    title: 'Change password',
+    text: 'Choose a new password for ladder editing (at least 4 characters).',
+    fields: [{ id: 'p1', label: 'New password', type: 'password' }, { id: 'p2', label: 'Repeat new password', type: 'password' }],
+    okText: 'Save password',
+    validate: v => v.p1.length < 4 ? 'Use at least 4 characters.' : (v.p1 !== v.p2 ? 'The two passwords do not match.' : null)
+  });
+  if (!r) return;
+  try { localStorage.setItem(LS_PWHASH, pwHash(r.p1)); ladMsg('Password changed.', 'ok'); }
+  catch (e) { ladMsg('Could not save the password in this browser.', 'err'); }
+}
+async function resetLadders() {
+  const r = await askModal({
+    title: 'Reset to original ladders',
+    text: 'All three ladders go back to the original values from the Excel workbook. Your edits will be lost.',
+    okText: 'Reset ladders'
+  });
+  if (!r) return;
+  applyLadderSnapshot(ladderSnapshot(LADDERS_DEFAULT));
+  try { localStorage.removeItem(LS_LADDERS); } catch (e) {}
+  renderLadders(); refreshAfterLadderChange();
+  ladMsg('Ladders reset to the original values.', 'ok');
+}
+function ladMsg(text, kind) {
+  const el = document.getElementById('ladMsg');
+  if (!el) return;
+  el.textContent = text || '';
+  el.className = 'lad-msg' + (kind ? ' ' + kind : '');
+}
+function refreshAfterLadderChange() {
+  runPlanner();
+  if (document.getElementById('matrix').classList.contains('active')) buildMatrix();
+}
+function ladderWarnings() {
+  const out = [];
+  LAD_TYPES.forEach(t => LADDERS[t].forEach((b, i) => {
+    if (i > 0 && Math.abs(b.above - LADDERS[t][i - 1].upTo) > 1e-9) {
+      out.push(`${t}: band ${i + 1} starts at ${b.above} but band ${i} ends at ${LADDERS[t][i - 1].upTo} (gap or overlap — an SMV in a gap uses the last band).`);
+    }
+  }));
+  return out;
+}
+function updateLadderBadges() {
+  const ed = document.getElementById('ladEdited');
+  if (ed) ed.style.display = laddersEdited() ? '' : 'none';
+  const w = document.getElementById('ladWarn');
+  if (w) w.innerHTML = ladderWarnings().map(x => '⚠ ' + x).join('<br>');
+}
+
+function renderLadders() {
+  const bar = document.getElementById('ladderBar');
   const container = document.getElementById('ladderTables');
+  bar.innerHTML = `
+    <div class="lad-bar">
+      <span class="lad-status ${ladderUnlocked ? 'open' : ''}">${ladderUnlocked ? '🔓 Editing unlocked' : '🔒 View only · password protected'}</span>
+      <span class="lad-edited" id="ladEdited" style="display:none">Edited — differs from the original ladder</span>
+      <div class="lad-actions">
+        ${ladderUnlocked
+          ? `<button class="btn btn-secondary" id="ladChangePw" type="button">Change password</button>
+             <button class="btn btn-secondary" id="ladReset" type="button">Reset to original</button>
+             <button class="btn" id="ladLock" type="button">Lock</button>`
+          : `<button class="btn" id="ladUnlock" type="button">Unlock to edit</button>`}
+      </div>
+    </div>
+    <div class="lad-msg" id="ladMsg"></div>
+    <div class="lad-warn" id="ladWarn"></div>`;
+  const hdr = ladderUnlocked
+    ? `<th>SMV range</th><th>SMV above</th><th>SMV up to</th>`
+    : `<th>SMV range</th>`;
   let html = '';
-  ['Basic', 'Tight', 'Complex'].forEach(type => {
+  LAD_TYPES.forEach(type => {
     html += `<div class="section-title">${type} ladder</div>
       <div class="table-wrap" style="max-height:none;margin-bottom:1.5rem">
       <table class="ladder-table">
-        <thead>
-          <tr>
-            <th>SMV range</th>
-            <th>Day 1</th><th>Day 2</th><th>Day 3</th><th>Day 4</th>
-            <th>Day 5</th><th>Day 6</th><th>Day 7</th><th>Day 8+</th>
-          </tr>
-        </thead>
+        <thead><tr>${hdr}
+          <th>Day 1</th><th>Day 2</th><th>Day 3</th><th>Day 4</th>
+          <th>Day 5</th><th>Day 6</th><th>Day 7</th><th>Day 8+</th></tr></thead>
         <tbody>
-          ${LADDERS[type].map(b => `
+          ${LADDERS[type].map((b, i) => ladderUnlocked ? `
+            <tr>
+              <td id="lab-${type}-${i}">${b.band}</td>
+              <td><input class="lad-in" data-t="${type}" data-i="${i}" data-f="above" value="${b.above}" inputmode="decimal" aria-label="${type} band ${i + 1} SMV above"></td>
+              <td><input class="lad-in" data-t="${type}" data-i="${i}" data-f="upTo" value="${b.upTo}" inputmode="decimal" aria-label="${type} band ${i + 1} SMV up to"></td>
+              ${b.days.map((d, k) => `<td><input class="lad-in" data-t="${type}" data-i="${i}" data-f="d${k}" value="${+(d * 100).toFixed(2)}" inputmode="decimal" aria-label="${type} band ${i + 1} day ${k + 1} %"></td>`).join('')}
+            </tr>` : `
             <tr>
               <td>${b.band}</td>
-              ${b.days.map(d => `<td>${(d * 100).toFixed(0)}%</td>`).join('')}
-            </tr>
-          `).join('')}
+              ${b.days.map(d => `<td>${+(d * 100).toFixed(1)}%</td>`).join('')}
+            </tr>`).join('')}
         </tbody>
       </table>
       </div>`;
   });
   container.innerHTML = html;
+  if (ladderUnlocked) {
+    container.insertAdjacentHTML('afterbegin', '<p style="color:var(--muted);font-size:0.78rem;margin:-0.2rem 0 0.9rem">Type day values as percentages (for example 57 or 57.5). Band limits are SMV values; the next band should start where the previous one ends.</p>');
+  }
+  const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+  on('ladUnlock', unlockLadders); on('ladLock', lockLadders);
+  on('ladChangePw', changeLadderPassword); on('ladReset', resetLadders);
+  updateLadderBadges();
 }
+function buildLaddersView() { renderLadders(); }
+
+// edits (only reachable while unlocked: the inputs exist only then)
+document.getElementById('ladderTables').addEventListener('change', e => {
+  const el = e.target;
+  if (!ladderUnlocked || !el.classList.contains('lad-in')) return;
+  const b = LADDERS[el.dataset.t][+el.dataset.i], f = el.dataset.f;
+  const v = parseFloat(String(el.value).replace(',', '.'));
+  const restore = () => { el.value = f === 'above' || f === 'upTo' ? b[f] : +(b.days[+f.slice(1)] * 100).toFixed(2); };
+  if (!isFinite(v)) { restore(); ladMsg('Enter a number.', 'err'); return; }
+  if (f[0] === 'd') {
+    if (v < 0 || v > 100) { restore(); ladMsg('Day efficiency must be between 0 and 100 %.', 'err'); return; }
+    b.days[+f.slice(1)] = Math.round(v * 100) / 10000;
+  } else {
+    const na = f === 'above' ? v : b.above, nu = f === 'upTo' ? v : b.upTo;
+    if (v < 0 || !(nu > na)) { restore(); ladMsg('"SMV up to" must be greater than "SMV above" (and not negative).', 'err'); return; }
+    b[f] = v; b.band = bandLabel(b.above, b.upTo);
+    const lab = document.getElementById(`lab-${el.dataset.t}-${el.dataset.i}`);
+    if (lab) lab.textContent = b.band;
+  }
+  const ok = saveLadders();
+  updateLadderBadges();
+  refreshAfterLadderChange();
+  ladMsg(ok ? 'Saved ✓ — everything recalculated.' : 'Applied, but this browser would not save it.', ok ? 'ok' : 'err');
+});
 
 // ========== PRINT / PDF ==========
 function buildPrintReport(plan, inputs) {
@@ -1322,7 +1596,7 @@ function buildPrintReport(plan, inputs) {
       <div class="box"><div class="kv">${plan.numLines} × ${leadTime}</div><div class="kl">Lines × days</div></div>
       <div class="box"><div class="kv">${fmt(plan.totalHours, 1)}</div><div class="kl">Total line hours</div></div>
       <div class="box"><div class="kv">${fmt(totalManHours, 0)}</div><div class="kl">Man-hours</div></div>
-      <div class="box"><div class="kv">${fmt(plan.qtyPerFullLine, 0)}</div><div class="kl">Pcs / full line</div></div>
+      <div class="box"><div class="kv">${fmt(plan.qtyPerFullLine, 0)}</div><div class="kl">Required pcs for maximum productivity</div></div>
     </div>
 
     <div class="pr-section">
@@ -1436,6 +1710,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById(tab.dataset.tab).classList.add('active');
+    if (ladderUnlocked && tab.dataset.tab !== 'ladders') lockLadders();
     if (tab.dataset.tab === 'matrix') buildMatrix();
   });
 });
